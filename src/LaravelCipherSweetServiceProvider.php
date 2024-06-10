@@ -15,6 +15,7 @@ use Spatie\LaravelCipherSweet\Commands\EncryptCommand;
 use Spatie\LaravelCipherSweet\Commands\GenerateKeyCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Tik\AppSettings\Helpers\EncryptionHelper;
 
 class LaravelCipherSweetServiceProvider extends PackageServiceProvider
 {
@@ -42,7 +43,7 @@ class LaravelCipherSweetServiceProvider extends PackageServiceProvider
             $class = config('ciphersweet.backends.custom');
             $backend = (new $class())();
 
-            if (! $backend instanceof BackendInterface) {
+            if (!$backend instanceof BackendInterface) {
                 throw new \Exception($backend::class . ' must implement ' . BackendInterface::class);
             }
 
@@ -62,16 +63,18 @@ class LaravelCipherSweetServiceProvider extends PackageServiceProvider
             $class = config('ciphersweet.providers.custom');
             $provider = (new $class())();
 
-            if (! $provider instanceof KeyProviderInterface) {
+            if (!$provider instanceof KeyProviderInterface) {
                 throw new \Exception($provider::class . ' must implement ' . KeyProviderInterface::class);
             }
 
             return $provider;
         }
 
+        $secretKey = app(EncryptionHelper::class)->getSecretKey();
+
         return match (config('ciphersweet.provider')) {
             'file' => new FileProvider(config('ciphersweet.providers.file.path')),
-            'string' => new StringProvider(config('ciphersweet.providers.string.key')),
+            'string' => new StringProvider($secretKey),
             default => new RandomProvider($backend),
         };
     }
